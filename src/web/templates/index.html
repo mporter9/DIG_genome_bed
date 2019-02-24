@@ -1,0 +1,445 @@
+{% extends "layouts/layout.html" %}
+
+
+{% block title %}Home{% endblock %}
+
+{% block head %}
+
+{{ super() }}
+
+{# <script src="https://code.highcharts.com/highcharts.js"></script> #}
+
+<style type="text/css">
+    .overlap{
+		fill: blue;
+	}
+
+	.nonoverlap{
+		fill: red;
+	}
+
+	.ref_gap{
+		fill: #CCC;
+	}
+
+	.axis text {
+		font: 10px sans-serif;
+		fill: #555;
+	}
+
+	.axis path,
+	.axis line {
+		fill: none;
+		stroke: #000;
+		shape-rendering: crispEdges;
+	}
+
+	.x.axis path {
+		display: none;
+	}
+
+	.chr{
+		margin: 25px 0 50px 15px;
+		font: 12px sans-serif;
+	}
+
+	.zoom_controls{
+		margin: 10px 0 0 10px;
+	}
+
+	.zoom_controls label{
+		margin: 0 10px;
+	}
+
+	.zoom_controls input{
+		margin-left: 5px;
+		width: 5%;
+		height: 13px;
+	}
+
+	.update_btn{
+		font: 12px sans-serif;
+	}
+
+	#chromosomes hr{
+		width: 10%;
+		text-align: left;
+		margin-left: 0;
+	}
+
+	.moreinfo{
+		margin-top: 15px;
+	}
+
+	.chrdata {
+		background-color: #cb7200;
+		margin-left: 100px;
+	}
+
+	button{
+		margin-left: 20px;
+		background-color: #0084cb;
+		color: white;
+		border: none;
+		padding: 5px 10px;
+		font-family: sans-serif;
+		cursor: pointer;
+	}
+
+	#summary span{
+		font-size: 1.5em;
+		font-weight: bold;
+		margin: 0 5px;
+	}
+
+	.chr span{
+		font-size: 1.2em;
+		font-weight: bold;
+		margin: 0 3px;
+	}
+
+	.gaps-list{
+		width: 30%;
+		float: left;
+		margin-bottom: 20px;
+	}
+
+	.gaps-list p{
+		text-align: center;
+		font-weight: bold;
+		font-size: 1.3em;
+	}
+
+	.gaps-list li{
+		text-decoration: none;
+		list-style: none;
+		margin: 10px;
+
+	}
+</style>
+
+{% endblock %}
+
+
+{% block content %}
+
+{#
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var myChart = Highcharts.chart('container', {
+        chart: {
+            type: 'bar'
+        },
+        title: {
+            text: 'Fruit Consumption'
+        },
+        xAxis: {
+            categories: ['Apples', 'Bananas', 'Oranges']
+        },
+        yAxis: {
+            title: {
+                text: 'Fruit eaten'
+            }
+        },
+        series: [{
+            name: 'Jane',
+            data: [1, 0, 4]
+        }, {
+            name: 'John',
+            data: [5, 7, 3]
+        }]
+    });
+});
+</script>
+#}
+
+<div id="container" style="width:100%; height:400px;">
+    <div id="summary">
+    <p> Overlapping chromosomes.
+    </p>
+    <p> Min overlap = </p>
+    <p>(100 bp)</p>
+    <!--
+    <p>Doing Important Genomics <span id="sample-name"></span> has <span id="total-uncov"></span> uncovered bases, representing <span id="uncov-perc"></span> of the total defined genome. <br><br> Of these uncovered bases, <span id="uncov-gene"></span> are in regions which overlap a known gene.<button class="toggle">More Data</button></p>
+-->
+    <div class="moreinfo">Most reference genomes include a certain number of undefined bases. The reference for this sample has <span id="ref-undef"></span> undefined bases out of <span id="ref-total"></span> total bases.</div>
+</div>
+<div id="chromosomes">
+</div>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script src="{{ url_for('static', filename='js/chrdata.js' )}}"></script>
+<script src="{{ url_for('static', filename='js/helpers.js' )}}"></script>
+
+<script>
+$(function(){
+
+    var addThousandsSeparator = function(x){
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    };
+
+    var calculateOverallStats = function(){
+        var totalBases = 0;
+        var totalUndefined = 0;
+        var totalUncovered = 0;
+        var totalGeneOverlap = 0;
+        contigs.forEach(function(chr){
+            calculateChromStats(chr);
+            totalBases += chrData[chr]['total'];
+            totalUndefined += chrData[chr]['undefined'];
+            totalUncovered += chrData[chr]['uncovered'];
+            totalGeneOverlap += chrData[chr]['uncoveredGenes'];
+        });
+        $("#ref-undef").text("{0} ({1}%)".format(addThousandsSeparator(totalUndefined), ((totalUndefined/totalBases) * 100).toFixed(2) ));
+        $('#ref-total').text(addThousandsSeparator(totalBases));
+        $("#total-uncov").text(addThousandsSeparator(totalUncovered));
+        $("#uncov-perc").text(((totalUncovered/ (totalBases - totalUndefined)) * 100).toFixed(2) + '%');
+        $('#uncov-gene').text('{0} ({1}%)'.format(addThousandsSeparator(totalGeneOverlap), ((totalGeneOverlap/totalUncovered) * 100).toFixed(2)));
+        $('#sample-name').text(chrData.name);
+    };
+
+    var calculateChromStats = function(chr, numTopGaps){
+        var numGaps = typeof numTopGaps !== 'undefined' && parseInt(numGaps) ? numTopGaps : 20;
+        chrData[chr]['uncovered'] = 0;
+        chrData[chr]['uncoveredGenes'] = 0;
+        chrData[chr]['nonoverlaps'].forEach(function(gap){
+            chrData[chr]['uncovered'] += gap.sep;
+            if(gap.hasOwnProperty('gene')){
+                chrData[chr]['uncoveredGenes'] += gap.sep;
+            }
+        });
+        var definedBases = chrData[chr]['total'] - chrData[chr]['undefined'];
+        $('#chr{0}Data .chr-uncov'.format(chr)).text(addThousandsSeparator(chrData[chr]['uncovered']));
+        $('#chr{0}Data .chr-uncovperc'.format(chr)).text('{0}%'.format( (chrData[chr]['uncovered']/definedBases * 100).toFixed(2) ));
+        $('#chr{0}Data .chr-defined'.format(chr)).text(addThousandsSeparator(definedBases));
+        var sortedNonOverlaps = chrData[chr]['nonoverlaps'].sort(function(a, b){
+            if(a.sep > b.sep){
+                return -1;
+            }
+            if(a.sep < b.sep){
+                return 1;
+            }
+            return 0;
+        });
+        var geneOverlaps = sortedNonOverlaps.filter(function(gap){
+            return gap.hasOwnProperty('gene');
+        });
+        var intergenicOverlaps = sortedNonOverlaps.filter(function(gap){
+            return !gap.hasOwnProperty('gene');
+        });
+        var $allGapsList = $('#chr{0}Data .all-gaps'.format(chr));
+        var $geneGapsList = $('#chr{0}Data .all-gene-gaps'.format(chr));
+        var $intergenicGapsList = $('#chr{0}Data .all-intergene-gaps'.format(chr));
+        for(var i = 0; i < numGaps; i++){
+            if(geneOverlaps.length < i + 1){
+                return;
+            }
+            var anyGap = geneOverlaps[i];
+            var anyGapText = '{0} bases, starting at {1}'.format(addThousandsSeparator(sortedNonOverlaps[i].sep), addThousandsSeparator(sortedNonOverlaps[i].start));
+            if(anyGap.hasOwnProperty('gene')){
+                anyGapText += ' on gene {0}' .format(anyGap.gene);
+            }
+            $allGapsList.append($('<li>{0}</li>'.format(anyGapText)));
+            if(geneOverlaps.length > i){
+                $geneGapsList.append($('<li>{0} bases, starting at {1} on gene {2}</li>'.format(addThousandsSeparator(geneOverlaps[i].sep), addThousandsSeparator(geneOverlaps[i].start), geneOverlaps[i].gene)));
+            }
+            if(intergenicOverlaps.length > i){
+                $intergenicGapsList.append($('<li>{0} bases, starting at {1}</li>'.format(addThousandsSeparator(intergenicOverlaps[i].sep), addThousandsSeparator(intergenicOverlaps[i].start))));
+            }
+        }
+    };
+
+    var zoomClick = function(d){
+        boxData = this.dataset;
+        generatePlot(boxData.chr, boxData.start, boxData.end);
+    };
+
+    var generatePlot = function(chr, start, end){
+        var startVal = typeof start !== 'undefined' ? start : 0;
+        var endVal = typeof start !== 'undefined' ? end: chrData[chr]['total'];
+
+        if(!parseInt(startVal) || parseInt(startVal) < 0){
+            startVal = 0;
+        }
+
+        if(!parseInt(endVal) || parseInt(endVal) > chrData[chr]['total']){
+            endVal = chrData[chr]['total'];
+        }
+
+        var startCoord = parseInt(startVal);
+        var endCoord = parseInt(endVal);
+
+        if(startCoord > endCoord){
+            startCoord = 0;
+            endCoord = chrData[chr]['total'];
+        }
+
+        var nonOverlaps = filterGaps(chrData[chr]['nonoverlaps'], startCoord, endCoord);
+        var refGaps = filterGaps(chrData[chr]['ref_gaps'], startCoord, endCoord);
+
+        var margin = {top: 5, right: 5, bottom: 18, left: 5},
+        width = 1300 - margin.left - margin.right,
+        height = 35 - margin.top - margin.bottom;
+
+        var x = d3.scale.linear().range([0, width]);
+        var y = d3.scale.linear().range([height, 0]);
+
+        var xAxis = d3.svg.axis()
+        .scale(x)
+            .ticks(10)
+            .tickFormat(d3.format(',.0f'))
+        .orient("bottom");
+
+        d3.select('#chr{0}'.format(chr)).selectAll('*').remove();
+
+        var chart = d3.select("#chr{0}".format(chr))
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .attr('data-start', startCoord)
+        .attr('data-end', endCoord)
+        .append("g")
+        .attr("transform", "translate({0},{1})".format(margin.left, margin.top));
+
+        x.domain([startCoord, endCoord]);
+
+        chart.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0,{0})".format(height))
+            .call(xAxis);
+
+        chart.selectAll(".ref_gap")
+            .data(refGaps)
+            .enter().append("rect")
+            .attr("x", function(d) { return x(d.start); })
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", function(d){return x(startCoord + d.sep); })
+            .attr('class', 'bar ref_gap');
+
+        chart.selectAll(".nonoverlap")
+            .data(nonOverlaps)
+            .enter().append("rect")
+            .attr("x", function(d) { return x(d.start); })
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", function(d){return x(startCoord + d.sep); })
+            .attr('class', 'bar nonoverlap');
+
+        for(var i = 1; i < x.ticks().length; i++){
+            var startLoc = x.ticks()[i - 1];
+            var endLoc = x.ticks()[i];
+            chart.append('rect')
+            .attr('x', x(startLoc))
+            .attr('y', 0)
+            .attr('height', height)
+            .attr('width', x(endLoc) - x(startLoc))
+            .attr('data-start', startLoc)
+            .attr('data-end', endLoc)
+            .attr('data-chr', chr)
+            .attr('fill', 'rgba(1,1,1,0)')
+            .on('click', zoomClick);
+        }
+    };
+
+    var filterGaps = function(gapsList, start, end){
+        return gapsList.filter(function(gap){
+            var gapEnd = gap.start + gap.sep;
+            return (gap.start >= start && gap.start <= end) ||
+                                 (gapEnd >=start && gapEnd <= end) ||
+                                 (gap.start <= start && gapEnd >= end) ||
+                                 (gap.start >= start && gapEnd <= end)
+        });
+    };
+
+    var contigs = Object.keys(chrData).filter(function(prop){
+        if(prop !== 'name'){
+            return true;
+        }
+        return false;
+    });
+
+    var getCurrentViewport = function(chr){
+        var $chart = $('#chr{0}'.format(chr));
+        var startCoord = parseInt($chart.attr('data-start'));
+        var endCoord = parseInt($chart.attr('data-end'));
+        var coordWidth = endCoord - startCoord;
+        return {start: startCoord, end: endCoord, width: coordWidth};
+    };
+
+    $('#chromosomes').html('');
+    contigs.forEach(function(contig){
+        var $chrDiv = $('<div class="chr" id="chr{0}Data" data-chr="{0}"><h3>Chromosome {0}</h3><svg id="chr{0}"></svg><div class="zoom_controls"> <label>Start <input type="number" class="chr_start" step="1000" size="10"/></label><label>End <input type="number" class="chr_end" step="1000" size="10"/></label><button class="update_btn">Update</button><button class="zoomin"> + </button> <button class="zoomout"> - </button> <button class="panleft"> &lt;- </button> <button class="panright"> -&gt; </button> <button class="resetzoom"> Reset </button><button class="toggle chrdata">More Data</button></div></div><hr>'.format(contig));
+        var $moreInfo = $('<div class="moreinfo">');
+        $moreInfo.append('<div><span>Chromosome {0}</span> has <span class="chr-uncov"> </span> uncovered bases, representing <span class="chr-uncovperc"></span> of <span class="chr-defined"></span> defined bases.</div>'.format(contig));
+        $moreInfo.append('<div class="gaps-lists"><div class="all-gaps gaps-list"><p>Top Gaps</p><ul></div><div class="all-intergene-gaps gaps-list"><p>Intergenic Gaps</p><ul></div><div class="all-gene-gaps gaps-list"><p>Gaps Overlapping Genes</p><ul></div></div>');
+  $chrDiv.append($moreInfo);
+        $('#chromosomes').append($chrDiv);
+        generatePlot(contig);
+    });
+
+    $('.update_btn').on('click', function(){
+        var chrDiv = $(this).parent().parent();
+        var chrID = chrDiv.data('chr');
+        var plotStart = chrDiv.find('.chr_start').first().val();
+        var plotEnd = chrDiv.find('.chr_end').first().val();
+        generatePlot(chrID, plotStart, plotEnd);
+    });
+
+    $('body').on('click', '.toggle', function(){
+        var moreInfo = $(this).parent().parent().find('.moreinfo');
+        if(moreInfo.is(":visible")){
+            $(this).text("More Data");
+        } else {
+            $(this).text("Hide");
+        }
+        moreInfo.toggle(300);
+    });
+
+    $('body').on('click', '.resetzoom', function(){
+        var thisChr = $(this).parent().parent().data('chr');
+        generatePlot(thisChr);
+    });
+
+    $('body').on('click', '.panleft', function(){
+        var thisChr = $(this).parent().parent().data('chr');
+        var viewport = getCurrentViewport(thisChr);
+        var newStart = viewport.start - (0.1 * viewport.width);
+        var newEnd = viewport.end - (0.1 * viewport.width);
+        generatePlot(thisChr, newStart, newEnd);
+    });
+
+    $('body').on('click', '.panright', function(){
+        var thisChr = $(this).parent().parent().data('chr');
+        var viewport = getCurrentViewport(thisChr);
+        var newStart = viewport.start + (0.1 * viewport.width);
+        var newEnd = viewport.end + (0.1 * viewport.width);
+        generatePlot(thisChr, newStart, newEnd);
+    });
+
+    $('body').on('click', '.zoomin', function(){
+        var thisChr = $(this).parent().parent().data('chr');
+        var viewport = getCurrentViewport(thisChr);
+        var newStart = viewport.start + (0.1 * viewport.width);
+        var newEnd = viewport.end - (0.1 * viewport.width);
+        generatePlot(thisChr, newStart, newEnd);
+    });
+
+    $('body').on('click', '.zoomout', function(){
+        var thisChr = $(this).parent().parent().data('chr');
+        var viewport = getCurrentViewport(thisChr);
+        var newStart = viewport.start - (0.1 * viewport.width);
+        var newEnd = viewport.end + (0.1 * viewport.width);
+        generatePlot(thisChr, newStart, newEnd);
+    });
+
+    $('.moreinfo').hide();
+
+    calculateOverallStats();
+});
+
+</script>
+</div>
+
+{% endblock %}

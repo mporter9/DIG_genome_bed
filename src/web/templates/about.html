@@ -1,0 +1,26 @@
+{% extends "layouts/layout.html" %}
+
+{% block title %}About Team{% endblock %}
+
+{% block content %}
+
+<div class="container"><div class="col-md-15 px-0">
+    <h2>About Us</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <img src="{{ url_for('static', filename='img/IMG_1099.jpg') }}" class="img-fluid"/>
+        </div>
+        <div class="col-sm-4">
+            <h4><u>Team Members</u></h4>
+            <ul>
+                <li>Phil Boarding - Computational Scientist</li>
+                <li>Victoria Van - Computer Graphics</li>
+                <li>Nick Weiner - Pythonist Bioinformation</li>
+                <li>Michael Porter - Website Coder</li>
+            </ul>
+        </div>
+    </div>
+    </div>
+</div>
+
+{% endblock %}
