@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # Nick Weiner
 # HudsonAlpha Tech Challenge
-#from sys import argv
+# from sys import argv
 from datetime import datetime
-start_t = datetime.now()
 import glob
 from collections import deque
-from bedcov import Interval, BedData
-
-bed_files = glob.glob('*[0-9].bed')
-deque(bed_files)
+from bed_interval import Interval, BedData
+start_t = datetime.now()
 
 def bring_in_data(bed_file):
     file_data = {}
@@ -44,7 +41,7 @@ def get_overlaps(chrm, f_name, data, overlap_amt):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="""Make overlaps data""")
-    parser.add_argument("bed_files", type=str, help="bed files to be read")
+    parser.add_argument("bed_files_path", type=str, default="", help="path to bed files to be read")
     parser.add_argument("overlap", help="Amount of overlap between fragments", type=int,
                         default=50)
     parser.add_argument("k", type=int, help="minimum number of other files a segment must"
@@ -54,15 +51,31 @@ if __name__ == "__main__":
     parser.add_argument('-test', '-t', action='store_true',
                         help='Do not store the data')
     args = parser.parse_args()
-    fs = args.bed_files.split(',')
-    bed_dict = {}
-    for f in fs:
-        bed_dict[f[-5:]] = bring_in_data(f)
-    print(fs)
-    o_laps = ''
-    for file in bed_dict:
-        for chrm in bed_dict[file]:
-            o_laps += get_overlaps(chrm, file, bed_dict, args.overlap)
+    bed_files = glob.glob('{}*[0-9].bed'.format(args.bed_files_path))
+    # in_files = deque([BedData() for f in range(bed_files.len())])
+    # fs = args.bed_files.split(',')
+    beds = []
+    for f in bed_files:
+        new_bed = BedData()
+        new_bed.load_bed(f)
+        beds.append(new_bed)
+    current_files = deque(beds)
+    overlaps = BedData()
+
+    while current_files:
+        my_bed = current_files.popleft()
+        for chrm in my_bed.reads
+            for i in my_bed.reads[chrm]:
+                my_bed.reads[chrm][i].start
+
+        overlaps.add_interval
+    # while True:
+    #     try:
+    #         bed_file = BedData()
+    #         f = in_files.popleft()
+    #         bed_file.load_bed(f)
+    #     except IndexError:
+    #         break
     import json
     result = json.dumps(o_laps)
     f = open('overlaps.json', 'w')
