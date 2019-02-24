@@ -1,9 +1,16 @@
 from flask import Flask, url_for
 import os
 
+UPLOAD_FOLDER = 'web/uploads/'
+THE_EXTENSIONS = set(['bed'])
+
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
 
 def dated_url_for(endpoint, **values):
     if endpoint == 'static':
@@ -22,4 +29,4 @@ def override_url_for():
 
 
 # noinspection PyUnresolvedReferences
-import routes
+from web import routes
