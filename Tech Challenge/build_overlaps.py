@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # Nick Weiner
 # HudsonAlpha Tech Challenge
-
-import re
-
-
+#from sys import argv
+from datetime import datetime
+start_t = datetime.now()
+import glob
+from bedcov import
 def bring_in_data(bed_file):
     file_data = {}
     with open(bed_file) as infile:
@@ -19,19 +20,19 @@ def bring_in_data(bed_file):
 
 def get_overlaps(chrm, f_name, data, overlap_amt):
     #   compare starts and ends
-    for seg1 in chrm:
+    for seg1 in bed_dict[f_name][chrm]:
+        seg1
         start1, end1 = seg1
-        overlaps = []
+        overlaps = ''
         for file in data:
             if file == f_name:
-                next()
-            for i in data[file][chrm]:
-
-            start = max(start1,start2) #+1
-            end = min(end1,end2)
-            overlap= end - start
-            if overlap >= overlap_amt:
-                overlaps.append(start, end, f_name, file)
+                continue
+            for start2, end2 in data[file][chrm]:
+                start = max(start1,start2) #+1
+                end = min(end1,end2)
+                overlap = end - start
+                if overlap >= overlap_amt:
+                    overlaps+='\t'.join((chrm, str(start), str(end), f_name, file)) + '\n'
     return overlaps
 
 
@@ -53,9 +54,18 @@ if __name__ == "__main__":
     for f in fs:
         bed_dict[f[-5:]] = bring_in_data(f)
     print(fs)
+    o_laps = ''
     for file in bed_dict:
-        for chrm in file:
-            get_overlaps(chrm, file, bed_dict)
+        for chrm in bed_dict[file]:
+            o_laps += get_overlaps(chrm, file, bed_dict, args.overlap)
+    import json
+    result = json.dumps(o_laps)
+    f = open('overlaps.json', 'w')
+    f.write(result)
+    f.close()
 
-
+    with open('overlap.bed', 'w') as f2:
+        f2.write(o_laps)
+        f2.close()
+    print("loaded in " + str(datetime.now() - start_t))
 
