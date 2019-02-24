@@ -23,8 +23,6 @@ if __name__ == "__main__":
                         help='Do not store the data')
     args = parser.parse_args()
     bed_files = glob.glob('{}*[0-9].bed'.format(args.path))
-    # in_files = deque([BedData() for f in range(bed_files.len())])
-    # fs = args.bed_files.split(',')
     beds = []
     if args.verbose:
         print('Processing:')
@@ -44,6 +42,7 @@ if __name__ == "__main__":
             read_count = len(my_bed.reads[chrm])
             # get self overlaps in current file
             for i in range(read_count):
+                # loop over current file looking for internal overlaps
                 i_stt = my_bed.reads[chrm][i].start
                 i_end = my_bed.reads[chrm][i].end
                 for j in range(i+1, read_count):
@@ -52,6 +51,7 @@ if __name__ == "__main__":
                         # print('Coverage occurred')
                         my_bed.reads[chrm][i].add_coverage(j_stt,
                                                            min(j_stt, i_end), 1)
+                # loop over previously processed bed files
                 for b in unmade_beds:
                     other_bed_len = len(b.reads[chrm])
                     for j in range(other_bed_len):
@@ -71,14 +71,6 @@ if __name__ == "__main__":
     overlaps.dump_intervals(overlaps_f_name+'.bed', args.k)
     overlaps.dump_intervals_json(overlaps_f_name+'.json', args.k)
 
-    # import json
-    # result = json.dumps(o_laps)
-    # f = open('overlaps.json', 'w')
-    # f.write(result)
-    # f.close()
-    #
-    # with open('overlap.bed', 'w') as f2:
-    #     f2.write(o_laps)
-    #     f2.close()
+    #print runtime for comparison with fortran solution
     print("loaded in " + str(datetime.now() - start_t))
 
