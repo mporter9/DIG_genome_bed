@@ -57,8 +57,12 @@ if __name__ == "__main__":
     # in_files = deque([BedData() for f in range(bed_files.len())])
     # fs = args.bed_files.split(',')
     beds = []
+    if args.verbose:
+        print('Processing:')
     for f in bed_files:
         new_bed = BedData()
+        if args.verbose:
+            print('...{}'.format(f))
         new_bed.load_bed(f)
         beds.append(new_bed)
     current_files = deque(beds)
@@ -91,9 +95,12 @@ if __name__ == "__main__":
                     overlaps.copy_interval(chrm, my_bed.reads[chrm][i])
         unmade_beds.append(my_bed)
 
-    overlaps_f_name = 'overlaps_of_{}-{}'.format(bed_files[0][-5], bed_files[-1][-5])
-    overlaps.dump_intervals(overlaps_f_name+'out.bed', args.k)
-    overlaps.dump_intervals_json(overlaps_f_name+'out.json', args.k)
+    overlaps_f_name = 'overlaps_of_{}-{}_{}_{}_out'.format(bed_files[0][-5],
+                                                              bed_files[-1][-5],
+                                                              args.overlap,
+                                                              args.k)
+    overlaps.dump_intervals(overlaps_f_name+'.bed', args.k)
+    overlaps.dump_intervals_json(overlaps_f_name+'.json', args.k)
 
     # import json
     # result = json.dumps(o_laps)

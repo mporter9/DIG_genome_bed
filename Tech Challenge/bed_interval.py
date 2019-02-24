@@ -118,7 +118,7 @@ class BedData(object):
             for chrm in self.reads:
                 for interval in self.reads[chrm]:
                     if interval.max_coverage>=k:
-                        line = '{0}\t{1}\t{2}\t{3}\n'.format(chrm, interval.start,
+                        line = 'chr{0}\t{1}\t{2}\t{3}\n'.format(chrm, interval.start,
                                                                 interval.end,
                                                                 # interval.mean_coverage,
                                                                 interval.max_coverage)
@@ -128,6 +128,7 @@ class BedData(object):
         self.sort_intervals()
         dump_data = {}
         for chrm in self.reads:
+            # chrm_t = 'chrm{}'.format(chrm)
             dump_data[chrm] = []
             for interval in self.reads[chrm]:
                 if interval.max_coverage >= k:
