@@ -1,0 +1,38 @@
+{% extends "layouts/layout.html" %}
+
+{% block title %}Create Report{% endblock %}
+
+{% block content %}
+
+<div class="container"><div class="col-md-15 px-0">
+    <h2>Run Report</h2>
+    <p>Please upload your .BED files that you would like to intersect. They will be processed by
+        Phil Boarding's parallel computing program.
+    </p>
+    <form id="file-form" method="post" action="acceptfiles" enctype="multipart/form-data">
+        <label class="mt-3" for="file-1">File 1:</label>
+        <input name="file-1" type="file" class="form-control-file" id="file-1" accept=".bed"/>
+        <label class="mt-3" for="file-2">File 2:</label>
+        <input name="file-2" type="file" class="form-control-file" id="file-2" accept=".bed"/>
+        <button id="submit-button" class="mt-4" type="submit" value="Upload">Upload</button>
+    </form>
+    <a href="#"><p class="mt-3" id="add-another">Add another file</p></a>
+
+    <script type="text/javascript">
+        let counter = 2;
+
+        function generate_next_file_element() {
+            counter += 1;
+            return `
+                <label class="mt-3" for="file-${counter}">File ${counter}:</label>
+                <input name="file-${counter}" type="file" class="form-control-file" id="file-${counter}" accept=".bed"/>
+            `;
+        }
+
+        $('#add-another').click(function(){
+            $(generate_next_file_element()).insertBefore($('#submit-button'));
+        })
+    </script>
+</div>
+
+{% endblock %}

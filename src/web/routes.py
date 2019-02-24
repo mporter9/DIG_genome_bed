@@ -1,5 +1,6 @@
 from web import app
 from web import controllers
+from web.controllers import reports
 
 DEFAULT_DECS = []
 
@@ -27,3 +28,6 @@ def map_route(url, func, **kwargs):
 
 map_route('/', controllers.index)
 map_route('/about', controllers.about)
+map_route('/createreport', controllers.create_report)
+map_route('/acceptfiles', controllers.accept_files, methods=["POST"])
+map_route('/viewreport', reports.view_report)
