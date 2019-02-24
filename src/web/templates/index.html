@@ -171,6 +171,12 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="http://d3js.org/d3.v3.min.js"></script>
 
 <script src="{{ url_for('static', filename='js/chrdata.js' )}}"></script>
+
+    <script type="text/javascript">
+        let chrData = {{ result_json|safe }}
+    </script>
+
+
 <script src="{{ url_for('static', filename='js/helpers.js' )}}"></script>
 
 <script>

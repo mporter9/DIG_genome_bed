@@ -22,4 +22,4 @@ def override_url_for():
 
 
 # noinspection PyUnresolvedReferences
-import routes
+from web import routes
