@@ -1,0 +1,6 @@
+
+rm readbed
+
+f77 readbed.f -o readbed -O3
+
+readbed  <$1

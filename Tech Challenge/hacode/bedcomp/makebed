@@ -1,0 +1,44 @@
+rm fort.*
+rm mand
+
+f77 mand.f -o mand -O3
+f77 randp.f -o randp -O3
+f77 rand2p.f -o rand2p -O3
+f77 randm.f -o randm -O3
+
+mand  <$1
+
+rm  case1/*
+rm  case2/*
+rm  case3/*
+rm  case4/*
+rm  case5/*
+rm  case6/*
+
+ls -al case1
+ls -al case2
+ls -al case3
+ls -al case4
+ls -al case5
+ls -al case6
+
+runr   data/file1.bed
+cp     fort.* case1
+runr   data/file2.bed
+cp     fort.* case2
+runr   data/file3.bed
+cp     fort.* case3
+runp   data/file1.bed
+cp     fort.* case4
+run2p  data/file2.bed
+cp     fort.* case5
+runm   data/file3.bed
+cp     fort.* case6
+
+ls -al case1
+ls -al case2
+ls -al case3
+ls -al case4
+ls -al case5
+ls -al case6
+

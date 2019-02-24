@@ -1,0 +1,7 @@
+
+rm fort.*
+rm mand
+
+f77 mand.f -o mand -O3
+
+mand  <$1

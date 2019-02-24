@@ -1,0 +1,7 @@
+
+rm fort.*
+rm randm
+
+f77 randm.f -o randm -O3
+
+randm <$1
