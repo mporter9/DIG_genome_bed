@@ -14,13 +14,6 @@ class Interval(object):
             if self.start <= i <= self.end:
                 self.coverage.update(list(map(int, ones(depth)*i)))
 
-    # @property
-    # def mean_coverage(self):
-    #     running_sum = 0
-    #     for i in range(self.start, self.end + 1):
-    #         running_sum += self.coverage[i]
-    #     return float(running_sum) / self.size
-
     @property
     def max_coverage(self):
         if len(self.coverage) == 0:
@@ -100,17 +93,6 @@ class BedData(object):
                 total_bases += coord.size
             chr_totals[chrm] = total_bases
         return chr_totals
-
-
-    # def get_self_overlaps(self, set_overlap):
-    #     overs = BedData()
-    #     for chr in self.reads:
-    #         for interval in self.reads[chr]:
-    #             padding = 0
-    #             if set_overlap<0:
-    #                 padding = abs(set_overlap)
-    #             if self.is_overlap(chr, interval.start, interval.end, padding):
-
 
     def dump_intervals(self, file_name, k=1):
         self.sort_intervals()
