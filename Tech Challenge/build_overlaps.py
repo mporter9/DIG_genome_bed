@@ -5,7 +5,12 @@
 from datetime import datetime
 start_t = datetime.now()
 import glob
-from bedcov import
+from collections import deque
+from bedcov import Interval, BedData
+
+bed_files = glob.glob('*[0-9].bed')
+deque(bed_files)
+
 def bring_in_data(bed_file):
     file_data = {}
     with open(bed_file) as infile:
